@@ -1,0 +1,10 @@
+pedido_id,cliente_id,livro,valor,data_pedido
+101,1,Dom Casmurro,42.90,2024-01-10
+102,1,Vidas Secas,33.00,2024-02-05
+103,2,Capitães da Areia,39.90,2024-01-15
+104,3,O Quinze,32.00,2024-03-01
+105,3,Torto Arado,59.90,2024-03-12
+106,4,Gabriela Cravo e Canela,44.00,2024-02-20
+107,5,A Hora da Estrela,36.50,2024-04-02
+108,5,O Avesso da Pele,54.90,2024-04-18
+109,2,Grande Sertão Veredas,67.90,2024-05-01
