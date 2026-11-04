@@ -1,54 +1,98 @@
 # Data Link
 
-API local (SQLite) + pipeline em três camadas + painel de indicadores.
+API local (SQLite) + pipeline em três camadas (`raw` → `refined` → `marts`) + painel Streamlit de indicadores.
 
-## Camadas
+## Visão geral
+
+```text
+dados/bruto/*.csv  →  raw_*  →  refined_*  →  marts_*  →  dashboard
+```
 
 | Camada | Tabelas | Papel |
 | --- | --- | --- |
-| **raw** | `raw_clientes`, `raw_pedidos` | Dado bruto dos CSVs, sem alteração de valores |
+| **raw** | `raw_clientes`, `raw_pedidos` | CSVs sem alteração de valores |
 | **refined** | `refined_pedidos` | JOIN `pedido.cliente_id = cliente.cliente_id` + tipagem |
-| **marts** | `marts_resumo`, `marts_vendas_cidade` | Indicadores prontos para o painel |
+| **marts** | `marts_resumo`, `marts_vendas_cidade`, `marts_pedidos_cliente`, `marts_livros_cliente` | Indicadores prontos para o painel |
 
-`raw_pedidos.cliente_id` liga as duas tabelas brutas. O dashboard lê **somente** marts.
+O dashboard lê **somente** a camada marts — nenhum cálculo na tela.
 
-## Subir a API
+## Setup
 
-```bash
+```powershell
 python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
+```
+
+Use sempre o Python do `.venv` (ou `.\.venv\Scripts\python.exe`) para API, pipeline, testes e painel.
+
+## Subir a API
+
+```powershell
 uvicorn app.main:app --host 127.0.0.1 --port 8741
 ```
 
-- Docs: http://127.0.0.1:8741/docs
-- Saúde: http://127.0.0.1:8741/saude
+- Docs: http://127.0.0.1:8741/docs  
+- Saúde: http://127.0.0.1:8741/saude  
 
-## Rodar o pipeline
+Variáveis: `BANCO_CAMINHO`, `BANCO_SEM_EXEMPLO=1`, `BANCO_URL`.
+
+## Pipeline
 
 Com a API no ar:
 
-```bash
+```powershell
 python -m pipeline.executar
 ```
 
-Ou etapa a etapa: `python -m pipeline.raw`, `python -m pipeline.refined`, `python -m pipeline.marts`.
+Etapa a etapa: `python -m pipeline.raw`, `python -m pipeline.refined`, `python -m pipeline.marts`.
+
+Fontes brutas: `dados/bruto/clientes.csv` e `dados/bruto/pedidos.csv`.
 
 ## Painel
 
-```bash
-streamlit run dashboard/painel.py
+```powershell
+python -m streamlit run dashboard/painel.py
 ```
 
-O painel só exibe `marts_resumo` e `marts_vendas_cidade` — nenhum cálculo na tela.
+Abre em http://localhost:8501. Exibe:
+
+- resumo (`marts_resumo`)
+- pedidos por cliente (`marts_pedidos_cliente`)
+- livros comprados (`marts_livros_cliente`), com filtro por cliente
+- vendas por cidade (`marts_vendas_cidade`)
+
+Se as tabelas marts não existirem, rode `python -m pipeline.executar` antes.
 
 ## Testes
 
-```bash
-pytest
+```powershell
+python -m pytest
 ```
 
 Os testes do pipeline (`testes/test_pipeline.py`) usam dados inventados em memória e **não** abrem `data/banco.db`.
+
+## Logs de alterações
+
+Histórico em [`logs/alteracoes.log`](logs/alteracoes.log). Registrar uma mudança:
+
+```powershell
+python -m logs.registrar ADD "Descrição do que mudou"
+```
+
+Tipos: `ADD`, `CHG`, `FIX`, `DEL`, `DOCS`, `TEST`, `INIT`.
+
+## Estrutura
+
+```text
+app/                 API FastAPI + SQLite
+cliente.py           Cliente HTTP do Banco Local
+dados/bruto/         CSVs de origem
+pipeline/            raw, refined, marts, executar
+dashboard/painel.py  Streamlit (só marts)
+testes/              pytest (API + pipeline)
+logs/                histórico de alterações do projeto
+```
 
 ## Consultar com Python
 
@@ -56,17 +100,9 @@ Os testes do pipeline (`testes/test_pipeline.py`) usam dados inventados em memó
 from cliente import Banco
 
 with Banco("http://127.0.0.1:8741") as banco:
-    resultado = banco.consultar(
-        "livros",
-        colunas=["titulo", "autor", "ano", "preco"],
-        filtros=[
-            {"coluna": "preco", "op": "menor", "valor": 40},
-            {"coluna": "autor", "op": "contem", "valor": "Amado"},
-        ],
-        ordenar=[{"coluna": "ano", "direcao": "asc"}],
-    )
-    for livro in resultado["linhas"]:
-        print(livro["titulo"], livro["preco"])
+    por_cliente = banco.listar("marts_pedidos_cliente", ordenar="cliente_nome")
+    for linha in por_cliente["linhas"]:
+        print(linha["cliente_nome"], linha["qtd_pedidos"], linha["receita_total"])
 ```
 
-SQL somente leitura em `/sql`. Variáveis: `BANCO_CAMINHO`, `BANCO_SEM_EXEMPLO=1`, `BANCO_URL`.
+SQL somente leitura em `/sql`.
