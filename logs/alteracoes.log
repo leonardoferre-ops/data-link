@@ -1,0 +1,13 @@
+[2026-11-04 09:40] INIT | Projeto inicializado com API Banco Local (SQLite + cliente Python).
+[2026-11-04 09:45] ADD  | Camada raw: dados/bruto (clientes.csv, pedidos.csv) e pipeline/raw.py — tabelas raw_clientes e raw_pedidos ligadas por cliente_id.
+[2026-11-04 09:46] ADD  | Camada refined: pipeline/refined.py — JOIN pedidos×clientes e tabela refined_pedidos.
+[2026-11-04 09:47] ADD  | Camada marts: pipeline/marts.py e pipeline/executar.py — marts_resumo e marts_vendas_cidade.
+[2026-11-04 09:48] ADD  | Testes unitários: testes/test_pipeline.py com dados inventados (sem abrir data/banco.db).
+[2026-11-04 09:49] ADD  | Dashboard Streamlit: dashboard/painel.py lendo somente a camada marts.
+[2026-11-04 09:50] DOCS | README atualizado com camadas, pipeline, testes e painel.
+[2026-11-04 18:57] ADD  | Mart marts_pedidos_cliente e seção Pedidos por cliente no painel.
+[2026-11-04 19:06] ADD  | Mart marts_livros_cliente e listagem de livros comprados no painel (filtro por cliente).
+[2026-11-04 19:10] FIX  | Recriação de tabelas marts mais robusta em pipeline/marts.py (409 ao recriar).
+[2026-11-04 20:03] ADD  | Pasta logs/ com alteracoes.log e utilitário registrar.py (python -m logs.registrar).
+[2026-11-04 20:13] FIX  | Corrige 404/409 ao recriar marts (metadado órfão) e unifica recriar_tabela no pipeline
+[2026-11-04 20:25] DOCS | README atualizado com setup, pipeline, painel (livros/clientes), testes e estrutura

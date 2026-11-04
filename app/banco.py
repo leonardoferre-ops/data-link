@@ -128,6 +128,13 @@ def esquema(conn: sqlite3.Connection, tabela: str) -> dict[str, Any]:
     return {"nome": tabela, "colunas": descrever_colunas(conn, tabela)}
 
 
+def _limpar_residuos_tabela(conn: sqlite3.Connection, nome: str) -> None:
+    """Remove metadados e/ou tabela física órfãos para evitar 404/409 dessincronizados."""
+    conn.execute(f"DELETE FROM {META} WHERE tabela = ?", (nome,))
+    if tabela_existe(conn, nome):
+        conn.execute(f"DROP TABLE {citar(nome)}")
+
+
 def criar_tabela(
     conn: sqlite3.Connection,
     nome: str,
@@ -140,6 +147,8 @@ def criar_tabela(
         raise ErroConsulta(400, "Uma tabela aceita no máximo 32 colunas.")
     if tabela_existe(conn, nome):
         raise ErroConsulta(409, f"A tabela {nome} já existe.")
+    # Metadado órfão sem tabela física: limpa antes de recriar.
+    conn.execute(f"DELETE FROM {META} WHERE tabela = ?", (nome,))
 
     vistos: set[str] = set()
     definicoes = [
@@ -168,9 +177,15 @@ def criar_tabela(
 
 
 def apagar_tabela(conn: sqlite3.Connection, nome: str) -> None:
-    exigir_tabela(conn, nome)
-    conn.execute(f"DELETE FROM {META} WHERE tabela = ?", (nome,))
-    conn.execute(f"DROP TABLE {citar(nome)}")
+    validar_nome(nome, o_que="Tabela")
+    existe_fisica = tabela_existe(conn, nome)
+    meta = conn.execute(
+        f"SELECT 1 FROM {META} WHERE tabela = ? LIMIT 1",
+        (nome,),
+    ).fetchone()
+    if not existe_fisica and not meta:
+        raise ErroConsulta(404, f"Tabela {nome} não encontrada.")
+    _limpar_residuos_tabela(conn, nome)
 
 
 def inserir_linhas(

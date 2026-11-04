@@ -7,6 +7,8 @@ from typing import Any
 
 from cliente import Banco
 
+from pipeline.util import recriar_tabela
+
 COLUNAS_VENDAS_CIDADE = [
     {"nome": "cidade", "tipo": "texto", "obrigatorio": True},
     {"nome": "estado", "tipo": "texto", "obrigatorio": True},
@@ -18,6 +20,25 @@ COLUNAS_VENDAS_CIDADE = [
 COLUNAS_RESUMO = [
     {"nome": "indicador", "tipo": "texto", "obrigatorio": True},
     {"nome": "valor", "tipo": "decimal", "obrigatorio": True},
+]
+
+COLUNAS_PEDIDOS_CLIENTE = [
+    {"nome": "cliente_id", "tipo": "inteiro", "obrigatorio": True},
+    {"nome": "cliente_nome", "tipo": "texto", "obrigatorio": True},
+    {"nome": "cidade", "tipo": "texto", "obrigatorio": True},
+    {"nome": "estado", "tipo": "texto", "obrigatorio": True},
+    {"nome": "qtd_pedidos", "tipo": "inteiro", "obrigatorio": True},
+    {"nome": "receita_total", "tipo": "decimal", "obrigatorio": True},
+    {"nome": "ticket_medio", "tipo": "decimal", "obrigatorio": True},
+]
+
+COLUNAS_LIVROS_CLIENTE = [
+    {"nome": "pedido_id", "tipo": "inteiro", "obrigatorio": True},
+    {"nome": "cliente_id", "tipo": "inteiro", "obrigatorio": True},
+    {"nome": "cliente_nome", "tipo": "texto", "obrigatorio": True},
+    {"nome": "livro", "tipo": "texto", "obrigatorio": True},
+    {"nome": "valor", "tipo": "decimal", "obrigatorio": True},
+    {"nome": "data_pedido", "tipo": "texto", "obrigatorio": True},
 ]
 
 
@@ -65,30 +86,82 @@ def resumo_indicadores(pedidos: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ]
 
 
-def _recriar_tabela(banco: Banco, nome: str, colunas: list[dict[str, Any]]) -> None:
-    try:
-        banco.apagar_tabela(nome)
-    except Exception:
-        pass
-    banco.criar_tabela(nome, colunas)
+def pedidos_por_cliente(pedidos: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Agrega quantidade, receita e ticket médio por cliente."""
+    grupos: dict[int, dict[str, Any]] = {}
+    for pedido in pedidos:
+        cliente_id = int(pedido["cliente_id"])
+        if cliente_id not in grupos:
+            grupos[cliente_id] = {
+                "cliente_id": cliente_id,
+                "cliente_nome": str(pedido["cliente_nome"]),
+                "cidade": str(pedido["cidade"]),
+                "estado": str(pedido["estado"]),
+                "valores": [],
+            }
+        grupos[cliente_id]["valores"].append(float(pedido["valor"]))
+
+    linhas: list[dict[str, Any]] = []
+    for cliente_id, dados in sorted(grupos.items(), key=lambda item: item[1]["cliente_nome"]):
+        valores = dados["valores"]
+        receita = round(sum(valores), 2)
+        qtd = len(valores)
+        linhas.append(
+            {
+                "cliente_id": cliente_id,
+                "cliente_nome": dados["cliente_nome"],
+                "cidade": dados["cidade"],
+                "estado": dados["estado"],
+                "qtd_pedidos": qtd,
+                "receita_total": receita,
+                "ticket_medio": round(receita / qtd, 2) if qtd else 0.0,
+            }
+        )
+    return linhas
+
+
+def livros_por_cliente(pedidos: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Lista cada livro comprado por cliente (um pedido por linha)."""
+    linhas = [
+        {
+            "pedido_id": int(pedido["pedido_id"]),
+            "cliente_id": int(pedido["cliente_id"]),
+            "cliente_nome": str(pedido["cliente_nome"]),
+            "livro": str(pedido["livro"]),
+            "valor": float(pedido["valor"]),
+            "data_pedido": str(pedido["data_pedido"]),
+        }
+        for pedido in pedidos
+    ]
+    return sorted(linhas, key=lambda item: (item["cliente_nome"], item["data_pedido"]))
 
 
 def carregar_marts(banco: Banco) -> dict[str, int]:
     """Lê refined_pedidos e materializa as tabelas de indicadores."""
     pedidos = banco.listar("refined_pedidos", limite=500)["linhas"]
     por_cidade = vendas_por_cidade(pedidos)
+    por_cliente = pedidos_por_cliente(pedidos)
+    livros = livros_por_cliente(pedidos)
     resumo = resumo_indicadores(pedidos)
 
-    _recriar_tabela(banco, "marts_vendas_cidade", COLUNAS_VENDAS_CIDADE)
-    _recriar_tabela(banco, "marts_resumo", COLUNAS_RESUMO)
+    recriar_tabela(banco, "marts_vendas_cidade", COLUNAS_VENDAS_CIDADE)
+    recriar_tabela(banco, "marts_pedidos_cliente", COLUNAS_PEDIDOS_CLIENTE)
+    recriar_tabela(banco, "marts_livros_cliente", COLUNAS_LIVROS_CLIENTE)
+    recriar_tabela(banco, "marts_resumo", COLUNAS_RESUMO)
 
     if por_cidade:
         banco.inserir("marts_vendas_cidade", por_cidade)
+    if por_cliente:
+        banco.inserir("marts_pedidos_cliente", por_cliente)
+    if livros:
+        banco.inserir("marts_livros_cliente", livros)
     if resumo:
         banco.inserir("marts_resumo", resumo)
 
     return {
         "marts_vendas_cidade": len(por_cidade),
+        "marts_pedidos_cliente": len(por_cliente),
+        "marts_livros_cliente": len(livros),
         "marts_resumo": len(resumo),
     }
 

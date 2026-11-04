@@ -8,6 +8,8 @@ from typing import Any
 
 from cliente import Banco
 
+from pipeline.util import recriar_tabela
+
 RAIZ = Path(__file__).resolve().parents[1]
 DIR_BRUTO = RAIZ / "dados" / "bruto"
 
@@ -33,22 +35,14 @@ def ler_csv(caminho: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(arquivo))
 
 
-def _recriar_tabela(banco: Banco, nome: str, colunas: list[dict[str, Any]]) -> None:
-    try:
-        banco.apagar_tabela(nome)
-    except Exception:
-        pass
-    banco.criar_tabela(nome, colunas)
-
-
 def carregar_raw(banco: Banco, diretorio: Path | None = None) -> dict[str, int]:
     """Grava clientes e pedidos na camada raw sem transformar os valores."""
     origem = diretorio or DIR_BRUTO
     clientes = ler_csv(origem / "clientes.csv")
     pedidos = ler_csv(origem / "pedidos.csv")
 
-    _recriar_tabela(banco, "raw_clientes", COLUNAS_CLIENTES)
-    _recriar_tabela(banco, "raw_pedidos", COLUNAS_PEDIDOS)
+    recriar_tabela(banco, "raw_clientes", COLUNAS_CLIENTES)
+    recriar_tabela(banco, "raw_pedidos", COLUNAS_PEDIDOS)
 
     # Mantém o texto bruto (ex.: valor como string) — nada é alterado.
     banco.inserir(

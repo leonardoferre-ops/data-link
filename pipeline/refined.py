@@ -6,6 +6,8 @@ from typing import Any
 
 from cliente import Banco
 
+from pipeline.util import recriar_tabela
+
 COLUNAS_PEDIDOS_ENRIQUECIDOS = [
     {"nome": "pedido_id", "tipo": "inteiro", "obrigatorio": True},
     {"nome": "cliente_id", "tipo": "inteiro", "obrigatorio": True},
@@ -44,21 +46,13 @@ def juntar_pedidos_clientes(
     return enriquecidos
 
 
-def _recriar_tabela(banco: Banco, nome: str, colunas: list[dict[str, Any]]) -> None:
-    try:
-        banco.apagar_tabela(nome)
-    except Exception:
-        pass
-    banco.criar_tabela(nome, colunas)
-
-
 def carregar_refined(banco: Banco) -> dict[str, int]:
     """Lê a raw, aplica o JOIN e grava refined_pedidos."""
     clientes = banco.listar("raw_clientes", limite=500)["linhas"]
     pedidos = banco.listar("raw_pedidos", limite=500)["linhas"]
     enriquecidos = juntar_pedidos_clientes(pedidos, clientes)
 
-    _recriar_tabela(banco, "refined_pedidos", COLUNAS_PEDIDOS_ENRIQUECIDOS)
+    recriar_tabela(banco, "refined_pedidos", COLUNAS_PEDIDOS_ENRIQUECIDOS)
     if enriquecidos:
         banco.inserir("refined_pedidos", enriquecidos)
     return {"refined_pedidos": len(enriquecidos)}
