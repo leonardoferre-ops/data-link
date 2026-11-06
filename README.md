@@ -77,6 +77,8 @@ poetry run mkdocs build --strict
 
 `poetry run task docs` abre a documentação MkDocs Material em `http://127.0.0.1:8000`.
 
+O site publicado fica em https://leonardoferre-ops.github.io/data-link/ (GitHub Pages, a cada push na `main`). A API e o painel Streamlit continuam locais: o GitHub não executa esses processos.
+
 Os testes do pipeline não abrem `data/banco.db`.
 
 ## Consultar com Python
