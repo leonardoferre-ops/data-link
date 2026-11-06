@@ -75,4 +75,5 @@ show_missing = true
 fail_under = 50
 
 [tool.taskipy.tasks]
+format = "ruff check src tests --fix && ruff format src tests"
 docs = "mkdocs serve"
