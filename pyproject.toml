@@ -17,6 +17,7 @@ dev = [
     "pytest (>=9.2.0,<10.0.0)",
     "pytest-cov (>=7.1.0,<8.0.0)",
     "mkdocs-material (>=9.8.0,<10.0.0)",
+    "taskipy (>=1.14.1,<2.0.0)",
 ]
 
 [tool.poetry]
@@ -72,3 +73,6 @@ branch = true
 [tool.coverage.report]
 show_missing = true
 fail_under = 50
+
+[tool.taskipy.tasks]
+docs = "mkdocs serve"

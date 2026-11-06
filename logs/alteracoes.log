@@ -12,3 +12,4 @@
 [2026-11-04 20:13] FIX  | Corrige 404/409 ao recriar marts (metadado órfão) e unifica recriar_tabela no pipeline
 [2026-11-04 20:25] DOCS | README atualizado com setup, pipeline, painel (livros/clientes), testes e estrutura
 [2026-11-06 12:53] CHG  | Pacote datalink no layout do skill, com Poetry, testes, MkDocs e CI. Sem deploy.
+[2026-11-06 13:27] DOCS | Atalho poetry run task docs sobe o MkDocs Material.

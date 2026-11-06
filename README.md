@@ -71,8 +71,11 @@ Abre em http://localhost:8501. Exibe resumo, pedidos por cliente, livros comprad
 poetry run pytest
 poetry run ruff check src tests
 poetry run ruff format --check src tests
+poetry run task docs
 poetry run mkdocs build --strict
 ```
+
+`poetry run task docs` abre a documentação MkDocs Material em `http://127.0.0.1:8000`.
 
 Os testes do pipeline não abrem `data/banco.db`.
 

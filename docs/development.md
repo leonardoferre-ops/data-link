@@ -76,11 +76,11 @@ poetry run pytest tests/integration -m integration --cov-fail-under=0
 poetry run ruff check src tests
 poetry run ruff format --check src tests
 poetry run ruff check --select I src tests
-poetry run mkdocs serve
+poetry run task docs
 poetry run mkdocs build --strict
 ```
 
-`mkdocs build --strict` é a validação de CI. O diretório `site/` não é versionado.
+`poetry run task docs` sobe o site MkDocs Material em `http://127.0.0.1:8000`. `mkdocs build --strict` é a validação de CI. O diretório `site/` não é versionado.
 
 ## Troubleshooting
 
