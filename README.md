@@ -2,6 +2,8 @@
 
 API local (SQLite) + pipeline em três camadas (`raw` → `refined` → `marts`) + painel Streamlit de indicadores.
 
+A documentação completa está em [docs/index.md](docs/index.md).
+
 ## Visão geral
 
 ```text
@@ -10,94 +12,74 @@ dados/bruto/*.csv  →  raw_*  →  refined_*  →  marts_*  →  dashboard
 
 | Camada | Tabelas | Papel |
 | --- | --- | --- |
-| **raw** | `raw_clientes`, `raw_pedidos` | CSVs sem alteração de valores |
+| **raw** | `raw_clientes`, `raw_pedidos` | CSVs sem alteração do texto de negócio |
 | **refined** | `refined_pedidos` | JOIN `pedido.cliente_id = cliente.cliente_id` + tipagem |
 | **marts** | `marts_resumo`, `marts_vendas_cidade`, `marts_pedidos_cliente`, `marts_livros_cliente` | Indicadores prontos para o painel |
 
-O dashboard lê **somente** a camada marts — nenhum cálculo na tela.
+O dashboard lê **somente** a camada marts. Nenhum cálculo acontece na tela.
+
+## Pré-requisitos
+
+- [pyenv](https://github.com/pyenv-win/pyenv-win) com o Python de `.python-version`
+- [Poetry](https://python-poetry.org/) 2
 
 ## Setup
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\activate
-pip install -r requirements.txt
-```
+Na raiz do repositório:
 
-Use sempre o Python do `.venv` (ou `.\.venv\Scripts\python.exe`) para API, pipeline, testes e painel.
+```powershell
+pyenv local 3.12.10
+poetry config virtualenvs.in-project true --local
+poetry env use (pyenv which python)
+poetry install
+```
 
 ## Subir a API
 
 ```powershell
-uvicorn app.main:app --host 127.0.0.1 --port 8741
+poetry run uvicorn datalink.infrastructure.api:app --host 127.0.0.1 --port 8741
 ```
 
-- Docs: http://127.0.0.1:8741/docs  
-- Saúde: http://127.0.0.1:8741/saude  
+- Docs: http://127.0.0.1:8741/docs
+- Saúde: http://127.0.0.1:8741/saude
 
-Variáveis: `BANCO_CAMINHO`, `BANCO_SEM_EXEMPLO=1`, `BANCO_URL`.
+Variáveis: `BANCO_CAMINHO`, `BANCO_SEM_EXEMPLO=1`, `BANCO_URL`. Os nomes estão em `.env.example`.
 
 ## Pipeline
 
-Com a API no ar:
+Com a API no ar, ainda na raiz:
 
 ```powershell
-python -m pipeline.executar
+poetry run python -m datalink
 ```
 
-Etapa a etapa: `python -m pipeline.raw`, `python -m pipeline.refined`, `python -m pipeline.marts`.
+Etapa a etapa: `poetry run python -m datalink.pipelines.raw`, `poetry run python -m datalink.pipelines.refined`, `poetry run python -m datalink.pipelines.marts`.
 
 Fontes brutas: `dados/bruto/clientes.csv` e `dados/bruto/pedidos.csv`.
 
 ## Painel
 
 ```powershell
-python -m streamlit run dashboard/painel.py
+poetry run streamlit run src/datalink/dashboard/painel.py
 ```
 
-Abre em http://localhost:8501. Exibe:
+Abre em http://localhost:8501. Exibe resumo, pedidos por cliente, livros comprados e vendas por cidade. Se as marts não existirem, rode o pipeline antes.
 
-- resumo (`marts_resumo`)
-- pedidos por cliente (`marts_pedidos_cliente`)
-- livros comprados (`marts_livros_cliente`), com filtro por cliente
-- vendas por cidade (`marts_vendas_cidade`)
-
-Se as tabelas marts não existirem, rode `python -m pipeline.executar` antes.
-
-## Testes
+## Testes e documentação
 
 ```powershell
-python -m pytest
+poetry run pytest
+poetry run ruff check src tests
+poetry run ruff format --check src tests
+poetry run mkdocs build --strict
 ```
 
-Os testes do pipeline (`testes/test_pipeline.py`) usam dados inventados em memória e **não** abrem `data/banco.db`.
-
-## Logs de alterações
-
-Histórico em [`logs/alteracoes.log`](logs/alteracoes.log). Registrar uma mudança:
-
-```powershell
-python -m logs.registrar ADD "Descrição do que mudou"
-```
-
-Tipos: `ADD`, `CHG`, `FIX`, `DEL`, `DOCS`, `TEST`, `INIT`.
-
-## Estrutura
-
-```text
-app/                 API FastAPI + SQLite
-cliente.py           Cliente HTTP do Banco Local
-dados/bruto/         CSVs de origem
-pipeline/            raw, refined, marts, executar
-dashboard/painel.py  Streamlit (só marts)
-testes/              pytest (API + pipeline)
-logs/                histórico de alterações do projeto
-```
+Os testes do pipeline não abrem `data/banco.db`.
 
 ## Consultar com Python
 
 ```python
-from cliente import Banco
+from datalink.infrastructure.cliente import Banco
 
 with Banco("http://127.0.0.1:8741") as banco:
     por_cliente = banco.listar("marts_pedidos_cliente", ordenar="cliente_nome")

@@ -1,0 +1,24 @@
+site_name: Data Link
+docs_dir: docs
+theme:
+  name: material
+  language: pt
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+nav:
+  - Início: index.md
+  - Arquitetura: architecture.md
+  - Desenvolvimento: development.md
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight

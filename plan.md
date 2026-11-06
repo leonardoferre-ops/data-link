@@ -188,3 +188,28 @@ O produto, além do gate do skill, precisa disto:
 - Pipeline idempotente: raw sem alterar o texto de negócio, refined com JOIN e tipagem, marts com as quatro tabelas.
 - Painel em `localhost:8501` lendo só marts, com resumo, pedidos por cliente, livros comprados e vendas por cidade.
 - Teste de pipeline sem abrir `data/banco.db`.
+
+## Registro da implementação
+
+Feito em 2026-11-06. O código ficou em `src/datalink/`. Saíram do repositório o layout antigo (`app/`, `pipeline/`, `dashboard/` na raiz, `cliente.py`, `testes/`) e o `requirements.txt`. Dependências e `poetry.lock` ficam só no Poetry. `pythonpath` do pytest inclui `src` e `.`, para o `poetry run pytest` importar `tests.fakes`.
+
+Comandos executados, com o resultado real:
+
+- `poetry check --lock`: All set.
+- `poetry install`: nenhuma dependência pendente; instalou o projeto `datalink` 1.0.0.
+- `poetry run ruff check src tests`: All checks passed.
+- `poetry run ruff format --check src tests`: 52 files already formatted.
+- `poetry run ruff check --select I src tests`: All checks passed.
+- `poetry run pytest --cov=datalink --cov-report=term-missing --cov-fail-under=50`: 47 passed, cobertura 79.86% sobre `datalink`.
+- `poetry run mkdocs build --strict`: site gerado em `site/` em 1.05 s. O diretório não é versionado.
+- `poetry run python -m datalink`, com a API em `127.0.0.1:8741`: raw 14 lidos e 14 aceitos, refined 9 e 9, marts 9 e 9, nenhuma rejeição nos CSVs de exemplo.
+- `SELECT indicador, valor FROM marts_resumo`: HTTP 200, pedidos 9, clientes 5, receita 411, ticket 45.67.
+- Painel em `http://127.0.0.1:8501`: os quatro indicadores, as tabelas de cliente, livros e cidade. O filtro Ana Souza deixa só as linhas dela; o resumo geral permanece 9, 5, R$ 411.00 e R$ 45.67.
+
+Continua fora desta entrega:
+
+- Deploy da API, do banco ou do painel.
+- Postgres, Render ou outro backend remoto.
+- Spark, Airflow e Databricks.
+- Novas fontes além dos dois CSVs e novas marts além das quatro tabelas do `doc.md`.
+- Publicação do site MkDocs. O CI só executa `mkdocs build --strict`, em pull request e em push para `main`.

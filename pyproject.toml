@@ -1,14 +1,74 @@
 [project]
-name = "banco-local"
+name = "datalink"
 version = "1.0.0"
-description = "API gratuita para montar um banco SQLite e consultar com Python."
-requires-python = ">=3.11"
+description = "API local em SQLite, pipeline em três camadas e painel de indicadores."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
 dependencies = [
-    "fastapi>=0.115",
-    "uvicorn>=0.32",
-    "httpx>=0.27",
-    "streamlit>=1.57",
+    "fastapi (>=0.162.0,<0.163.0)",
+    "uvicorn (>=0.54.0,<0.55.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "streamlit (>=1.67.0,<2.0.0)",
 ]
 
+[dependency-groups]
+dev = [
+    "ruff (>=0.17.4,<0.18.0)",
+    "pytest (>=9.2.0,<10.0.0)",
+    "pytest-cov (>=7.1.0,<8.0.0)",
+    "mkdocs-material (>=9.8.0,<10.0.0)",
+]
+
+[tool.poetry]
+packages = [{ include = "datalink", from = "src" }]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+src = ["src", "tests"]
+extend-exclude = [".venv", "site", "htmlcov"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F", "I", "N", "UP", "B", "SIM",
+    "C4", "PIE", "RET", "RUF", "ARG", "C90",
+    "BLE", "S",
+    "D100", "D101", "D102", "D103",
+]
+fixable = ["ALL"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+known-first-party = ["datalink"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D100", "D101", "D102", "D103", "S101"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
 [tool.pytest.ini_options]
-testpaths = ["testes"]
+testpaths = ["tests/unit"]
+pythonpath = ["src", "."]
+addopts = "--cov=datalink --cov-report=term-missing --cov-fail-under=50"
+markers = [
+    "integration: depende de serviço externo e não entra no gate padrão",
+]
+
+[tool.coverage.run]
+source = ["datalink"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 50

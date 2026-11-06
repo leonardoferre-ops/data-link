@@ -2,18 +2,15 @@
 
 Rode a API antes:
 
-    uvicorn app.main:app --host 127.0.0.1 --port 8741
-    python exemplos/consultas.py
+    poetry run uvicorn datalink.infrastructure.api:app --host 127.0.0.1 --port 8741
+    poetry run python exemplos/consultas.py
 """
 
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-
-from cliente import Banco, ErroBanco
+from datalink.infrastructure.cliente import Banco, ErroBanco
 
 
 def mostrar(titulo: str, linhas: list[dict]) -> None:
