@@ -37,8 +37,8 @@ def _resumo(indicadores: dict[str, float]) -> None:
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Pedidos", int(indicadores.get("qtd_pedidos", 0)))
     col2.metric("Clientes", int(indicadores.get("qtd_clientes", 0)))
-    col3.metric("Receita total", f"R$ {indicadores.get('receita_total', 0):.2f}")
-    col4.metric("Ticket médio", f"R$ {indicadores.get('ticket_medio', 0):.2f}")
+    col3.metric("valor Total", f"R$ {indicadores.get('receita_total', 0):.2f}")
+    col4.metric("média de Valor", f"R$ {indicadores.get('ticket_medio', 0):.2f}")
 
 
 def _clientes(por_cliente: list[dict], livros: list[dict]) -> None:
@@ -64,8 +64,8 @@ def _tabela_clientes(linhas: list[dict]) -> None:
                 "cidade": linha["cidade"],
                 "estado": linha["estado"],
                 "qtd_pedidos": linha["qtd_pedidos"],
-                "receita_total": linha["receita_total"],
-                "ticket_medio": linha["ticket_medio"],
+                "valor Total": linha["receita_total"],
+                "média de Valor": linha["ticket_medio"],
             }
             for linha in linhas
         ],
@@ -107,8 +107,8 @@ def _cidades(por_cidade: list[dict]) -> None:
                 "cidade": linha["cidade"],
                 "estado": linha["estado"],
                 "qtd_pedidos": linha["qtd_pedidos"],
-                "receita_total": linha["receita_total"],
-                "ticket_medio": linha["ticket_medio"],
+                "valor Total": linha["receita_total"],
+                "média de Valor": linha["ticket_medio"],
             }
             for linha in por_cidade
         ],
@@ -118,7 +118,7 @@ def _cidades(por_cidade: list[dict]) -> None:
     )
     st.bar_chart(
         {linha["cidade"]: linha["receita_total"] for linha in por_cidade},
-        alt="Receita total por cidade a partir de marts_vendas_cidade",
+        alt="valor Total por cidade a partir de marts_vendas_cidade",
     )
 
 
